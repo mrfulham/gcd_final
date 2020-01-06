@@ -12,4 +12,4 @@ The files within this repo are as follows:
 
 4. code_book.pdf is a PDF knit of the original RMarkdown file
 
-5. code_book.md is the Markdown file rendered for GitHub (use this one!)
+5. code_book_final.md is the Markdown file rendered for GitHub (use this one!)
