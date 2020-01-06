@@ -1,6 +1,8 @@
 ---
 title: "Code Book"
-output: html_document
+output:
+  html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -11,6 +13,8 @@ knitr::opts_chunk$set(echo = FALSE)
 
 library(dplyr)
 library(plyr)
+
+setwd("./UCI HAR Dataset") 
 
 features <- read.table("./features.txt", sep = "")
 activity_labels <- read.table("./activity_labels.txt", sep = "")
