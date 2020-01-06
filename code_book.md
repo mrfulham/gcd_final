@@ -1,0 +1,218 @@
+---
+title: "Code Book"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{r include = FALSE, message = FALSE}
+
+library(dplyr)
+library(plyr)
+
+setwd("./UCI HAR Dataset") 
+
+features <- read.table("./features.txt", sep = "")
+activity_labels <- read.table("./activity_labels.txt", sep = "")
+names(activity_labels) <- c("activity_code", "activity")
+
+#test
+
+test_subject <- read.table("./test/subject_test.txt", sep = "", header = F)
+test_xtest <- read.table("./test/X_test.txt", sep = "", header = F)
+names(test_xtest) <- features$V2
+test_ytest <- read.table("./test/y_test.txt", sep = "", header = F)
+
+combined_test <- cbind(test_subject, test_ytest)
+names(combined_test) <- c("subject", "activity_code")
+combined_test <- left_join(combined_test, activity_labels, by = "activity_code")
+combined_test <- ddply(combined_test, .(subject, activity_code, activity), summarize, window = order(activity_code))
+
+
+combined_test$partition <- rep("test")
+combined_test <- cbind(combined_test, test_xtest)
+
+#Inertial Signals
+
+index = as.character(1:128)
+
+test_body_acc_x <- read.table("./test/Inertial Signals/body_acc_x_test.txt", sep = "", header = F)
+names(test_body_acc_x) <- paste("body acceleration x reading ", index)
+test_body_acc_y <- read.table("./test/Inertial Signals/body_acc_y_test.txt", sep = "", header = F)
+names(test_body_acc_y) <- paste("body acceleration y reading ", index)
+test_body_acc_z <- read.table("./test/Inertial Signals/body_acc_z_test.txt", sep = "", header = F)
+names(test_body_acc_z) <- paste("body acceleration z reading ", index)
+test_body_gyro_x <- read.table("./test/Inertial Signals/body_gyro_x_test.txt", sep = "", header = F)
+names(test_body_gyro_x) <- paste("body velocity x reading ", index)
+test_body_gyro_y <- read.table("./test/Inertial Signals/body_gyro_y_test.txt", sep = "", header = F)
+names(test_body_gyro_y) <- paste("body velocity y reading ", index)
+test_body_gyro_z <- read.table("./test/Inertial Signals/body_gyro_z_test.txt", sep = "", header = F)
+names(test_body_gyro_z) <- paste("body velocity z reading ", index)
+test_total_acc_x <- read.table("./test/Inertial Signals/total_acc_x_test.txt", sep = "", header = F)
+names(test_total_acc_x) <- paste("total acceleration x reading ", index)
+test_total_acc_y <- read.table("./test/Inertial Signals/total_acc_y_test.txt", sep = "", header = F)
+names(test_total_acc_y) <- paste("total acceleration y reading ", index)
+test_total_acc_z <- read.table("./test/Inertial Signals/total_acc_z_test.txt", sep = "", header = F)
+names(test_total_acc_z) <- paste("total acceleration z reading ", index)
+
+combined_test <- cbind(combined_test, test_body_acc_x, test_body_acc_y, test_body_acc_z, test_body_gyro_x, test_body_gyro_y, test_body_gyro_z, test_total_acc_x, test_total_acc_y, test_total_acc_z)
+
+#train
+
+train_subject <- read.table("./train/subject_train.txt", sep = "", header = F)
+train_xtrain <- read.table("./train/X_train.txt", sep = "", header = F)
+names(train_xtrain) <- features$V2
+train_ytrain <- read.table ("./train/y_train.txt", sep = "", header = F)
+
+combined_train <- cbind(train_subject, train_ytrain)
+names(combined_train) <- c("subject", "activity_code")
+combined_train <- left_join(combined_train, activity_labels, by = "activity_code")
+combined_train <- ddply(combined_train, .(subject, activity_code, activity), summarize, window = order(activity_code))
+
+combined_train$partition <- rep("train")
+combined_train <- cbind(combined_train, train_xtrain) 
+
+#Inertial Signals
+
+train_body_acc_x <- read.table("./train/Inertial Signals/body_acc_x_train.txt", sep = "")
+names(train_body_acc_x) <- paste("body acceleration x reading ", index)
+train_body_acc_y <- read.table("./train/Inertial Signals/body_acc_y_train.txt", sep = "")
+names(train_body_acc_y) <- paste("body acceleration y reading ", index)
+train_body_acc_z <- read.table("./train/Inertial Signals/body_acc_z_train.txt", sep = "")
+names(train_body_acc_z) <- paste("body acceleration z reading ", index)
+train_body_gyro_x <- read.table("./train/Inertial Signals/body_gyro_x_train.txt", sep = "")
+names(train_body_gyro_x) <- paste("body velocity x reading ", index)
+train_body_gyro_y <- read.table("./train/Inertial Signals/body_gyro_y_train.txt", sep = "")
+names(train_body_gyro_y) <- paste("body velocity y reading ", index)
+train_body_gyro_z <- read.table("./train/Inertial Signals/body_gyro_z_train.txt", sep = "")
+names(train_body_gyro_z) <- paste("body velocity z reading ", index)
+train_total_acc_x <- read.table("./train/Inertial Signals/total_acc_x_train.txt", sep = "")
+names(train_total_acc_x) <- paste("total acceleration x reading ", index)
+train_total_acc_y <- read.table("./train/Inertial Signals/total_acc_y_train.txt", sep = "")
+names(train_total_acc_y) <- paste("total acceleration y reading ", index)
+train_total_acc_z <- read.table("./train/Inertial Signals/total_acc_z_train.txt", sep = "")
+names(train_total_acc_z) <- paste("total acceleration z reading ", index)
+
+combined_train <- cbind(combined_train, train_body_acc_x, train_body_acc_y, train_body_acc_z, train_body_gyro_x, train_body_gyro_y, train_body_gyro_z, train_total_acc_x, train_total_acc_y, train_total_acc_z)
+
+all_combined <- rbind(combined_test, combined_train)
+
+# extracts only the measurements on the mean and standard deviation for each measurement
+
+combined_mstd <- all_combined[, grep("(BodyAcc|BodyGyro)(-)(mean[^Freq]|std)", colnames(all_combined))]
+combined_final <- cbind(all_combined[, c(1, 2, 3, 4, 5)], combined_mstd)
+
+# uses descriptive activity names to name the activities in the data set
+
+# already done via joining activity labels with activity codes above
+
+# appropriately labels the data set with descriptive variable names
+
+#must remove plyr at this point
+detach("package:plyr", unload=TRUE)
+
+combined_rename <- rename(combined_final, t.bodyacc.mean.X = "tBodyAcc-mean()-X", t.bodyacc.mean.Y = "tBodyAcc-mean()-Y", t.bodyacc.mean.Z = "tBodyAcc-mean()-Z", t.bodyacc.std.X = "tBodyAcc-std()-X", t.bodyacc.std.Y = "tBodyAcc-std()-Y", t.bodyacc.std.Z = "tBodyAcc-std()-Z", t.bodygyro.mean.X = "tBodyGyro-mean()-X", t.bodygyro.mean.Y = "tBodyGyro-mean()-Y", t.bodygyro.mean.Z = "tBodyGyro-mean()-Z", t.bodygyro.std.X = "tBodyGyro-std()-X", t.bodygyro.std.Y = "tBodyGyro-std()-Y", t.bodygyro.std.Z = "tBodyGyro-std()-Z", f.bodyacc.mean.X = "fBodyAcc-mean()-X", f.bodyacc.mean.Y = "fBodyAcc-mean()-Y", f.bodyacc.mean.Z = "fBodyAcc-mean()-Z", f.bodyacc.std.X = "fBodyAcc-std()-X", f.bodyacc.std.Y = "fBodyAcc-std()-Y", f.bodyacc.std.Z = "fBodyAcc-std()-Z", f.bodygyro.mean.X = "fBodyGyro-mean()-X", f.bodygyro.mean.Y = "fBodyGyro-mean()-Y", f.bodygyro.mean.Z = "fBodyGyro-mean()-Z", f.bodygyro.std.X = "fBodyGyro-std()-X", f.bodygyro.std.Y = "fBodyGyro-std()-Y", f.bodygyro.std.Z = "fBodyGyro-std()-Z")
+
+# from the data set in step 4, creates a second, independent tidy data set with the average of each 
+# variable for each activity and each subject
+
+df_grouped_sub <- group_by(combined_rename, subject, activity)
+df_grouped_activity <- group_by(combined_rename, activity)
+
+sub_means <- summarize(df_grouped_sub, sub.t.bodyacc.mean.X = mean(t.bodyacc.mean.X), sub.t.bodyacc.mean.Y = mean(t.bodyacc.mean.Y), sub.t.bodyacc.mean.Z = mean(t.bodyacc.mean.Z), sub.t.bodyacc.std.X = mean(t.bodyacc.std.X), sub.t.bodyacc.std.Y = mean(t.bodyacc.std.Y), sub.t.bodyacc.std.Z = mean(t.bodyacc.std.Z), sub.t.bodygyro.mean.X = mean(t.bodygyro.mean.X), sub.t.bodygyro.mean.Y = mean(t.bodygyro.mean.Y), sub.t.bodygyro.mean.Z = mean(t.bodygyro.mean.Z), sub.t.bodygyro.std.X = mean(t.bodygyro.std.X), sub.t.bodygyro.std.Y = mean(t.bodygyro.std.Y), sub.t.bodygyro.std.Z = mean(t.bodygyro.std.Z), sub.f.bodyacc.mean.X = mean(f.bodyacc.mean.X), sub.f.bodyacc.mean.Y = mean(f.bodyacc.mean.Y), sub.f.bodyacc.mean.Z = mean(f.bodyacc.mean.Z), sub.f.bodyacc.std.X = mean(f.bodyacc.std.X), sub.f.bodyacc.std.Y = mean(f.bodyacc.std.Y), sub.f.bodyacc.std.Z = mean(f.bodyacc.std.Z), sub.f.bodygyro.mean.X = mean(f.bodygyro.mean.X), sub.f.bodygyro.mean.Y = mean(f.bodygyro.mean.Y), sub.f.bodygyro.mean.Z = mean(f.bodygyro.mean.Z), sub.f.bodygyro.std.X = mean(f.bodygyro.std.X), sub.f.bodygyro.std.Y = mean(f.bodygyro.std.Y), sub.f.bodygyro.std.Z = mean(f.bodygyro.std.Z))
+activity_means <- summarize(df_grouped_activity, act.t.bodyacc.mean.X = mean(t.bodyacc.mean.X), act.t.bodyacc.mean.Y = mean(t.bodyacc.mean.Y), act.t.bodyacc.mean.Z = mean(t.bodyacc.mean.Z), act.t.bodyacc.std.X = mean(t.bodyacc.std.X), act.t.bodyacc.std.Y = mean(t.bodyacc.std.Y), act.t.bodyacc.std.Z = mean(t.bodyacc.std.Z), act.t.bodygyro.mean.X = mean(t.bodygyro.mean.X), act.t.bodygyro.mean.Y = mean(t.bodygyro.mean.Y), act.t.bodygyro.mean.Z = mean(t.bodygyro.mean.Z), act.t.bodygyro.std.X = mean(t.bodygyro.std.X), act.t.bodygyro.std.Y = mean(t.bodygyro.std.Y), act.t.bodygyro.std.Z = mean(t.bodygyro.std.Z), act.f.bodyacc.mean.X = mean(f.bodyacc.mean.X), act.f.bodyacc.mean.Y = mean(f.bodyacc.mean.Y), act.f.bodyacc.mean.Z = mean(f.bodyacc.mean.Z), act.f.bodyacc.std.X = mean(f.bodyacc.std.X), act.f.bodyacc.std.Y = mean(f.bodyacc.std.Y), act.f.bodyacc.std.Z = mean(f.bodyacc.std.Z), act.f.bodygyro.mean.X = mean(f.bodygyro.mean.X), act.f.bodygyro.mean.Y = mean(f.bodygyro.mean.Y), act.f.bodygyro.mean.Z = mean(f.bodygyro.mean.Z), act.f.bodygyro.std.X = mean(f.bodygyro.std.X), act.f.bodygyro.std.Y = mean(f.bodygyro.std.Y), act.f.bodygyro.std.Z = mean(f.bodygyro.std.Z))
+
+# follow dataframe provides averages for each subject across all their windows for each activity AND the overall average for the activity for all subjects; prefix labels are sub. and act. respectively.
+combined_means <- left_join(sub_means, activity_means, by = "activity")
+
+```
+
+
+## Variables
+
+The following number counts the original merged data frame's variables:
+
+
+```{r, echo = TRUE}
+  ncol(all_combined)
+```
+
+This dataframe contained all variables provided in the original text files, including:  
+  
+* Subject label  
+* Activity code  
+* Activity label  
+* 561 features (i.e. measures derived from the base measurements, e.g. standard deviation, Jerk signals, etc.)  
+* window level data for x, y, z axes for total acceleration (total_acc), body velocity (body_gyro), and body acceleration (body_acc); there are 128 readings/window (**NOTE: each window relates to one activity and one subject, but many windows are recorded for each activity per subject**)  
+
+The only variables I created in this original merged dataframe were:  
+  
+* partition (i.e. train or test)  
+* window (i.e. counted which window for each subject)  
+
+For the second objective, I limited the dataframe to include only the measurements on the mean and the standard deviation for each measurement.  
+
+You can see the limited variable names here:  
+
+```{r, echo = TRUE}
+  names(combined_final)
+```
+
+Furthermore, you can see how I descriptively renamed the variables as directed in the fourth objective with the following variable names:  
+
+```{r, echo = TRUE}
+  names(combined_rename)
+```
+
+My final tidy data set had the following variable names:  
+*NOTE: the prefix 'sub' stands for the subject's averages for each activity and the prefix 'act' stands for the activity's overall averages*
+
+```{r, echo = TRUE}
+  names(combined_means)
+```
+
+
+## Data
+
+The dataset is from an experiement done on the wearable device, the Samsung Galaxy S smartphone. With the device's accelometer and gyroscope, 30 subjects' total acceleration and velocity were measured as they performed six "activities of daily living (ADL)."  These activities were: laying, sitting, standing, walking, walking downstairs, and walking upstairs.  
+
+The total acceleration was then transformed to parse out an estimated body acceleration.  The experiment designers then processed the data down to captured windows of each activity, all with 128 readings/window.    
+
+For information directly from the experiment about the experiment, please reference the following link: http://archive.ics.uci.edu/ml/datasets/Human+Activity+Recognition+Using+Smartphones  
+
+
+The data for this analysis was merged from 32 text files.  There were three sections to pull from: the structural files, the training set, and the test set. Below are descriptions of each section's files per the experiment's README.txt file.  
+
+The structural files loaded for this analysis include:  
+
+- 'activity_labels.txt': Links the class labels with their activity name.  
+
+- 'features.txt': List of all features.  
+
+"The following files are available for the train and test data. Their descriptions are equivalent.  
+
+- 'train/subject_train.txt': Each row identifies the subject who performed the activity for each window sample. Its range is from 1 to 30.  
+
+- 'train/Inertial Signals/total_acc_x_train.txt': The acceleration signal from the smartphone accelerometer X axis in standard gravity units 'g'. Every row shows a 128 element vector. The same description applies for the 'total_acc_x_train.txt' and 'total_acc_z_train.txt' files for the Y and Z axis.  
+
+- 'train/Inertial Signals/body_acc_x_train.txt': The body acceleration signal obtained by subtracting the gravity from the total acceleration.  
+
+- 'train/Inertial Signals/body_gyro_x_train.txt': The angular velocity vector measured by the gyroscope for each window sample. The units are radians/second."  
+
+The tidy data I created in run_analysis.R illustrated each observation as one row, as shown below.  
+
+```{r pressure, echo=FALSE, message = FALSE}
+head(combined_means, 10)
+```
+
+
+## Transformations
+
+I already documented a lot of my transformations in the variable section of this codebook (see above). 
+
+From the get-go, I combined the descriptive actity label with the activity code as required in the third objective of this assignment. I did this to create the tidiest, most descriptive original data set in the initial merging of the training and testing data.
+
